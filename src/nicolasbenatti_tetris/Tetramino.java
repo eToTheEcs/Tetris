@@ -6,6 +6,7 @@
 package nicolasbenatti_tetris;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * figura composta da 4 quadrati collegati, posizionati a piacere.
@@ -40,13 +41,16 @@ public class Tetramino implements Cloneable {
         
         this.type = type;
         
-        if(this.type.equals(TetraminoType.I))
+        /*if(this.type.equals(TetraminoType.I))
             BBOX_C = BBOX_R = 4;
         else
-            BBOX_C = BBOX_R = 3;
+            BBOX_C = BBOX_R = 3;*/
         
         // costruisci tetramino (valutare il fatto di rendere la classe non statica)
         coords = TetraminoBuilder.build(type);
+        
+        BBOX_R = coords.length;
+        BBOX_C = coords[0].length;
     }
 
     public Tetramino(Tetramino other) {
@@ -145,10 +149,9 @@ public class Tetramino implements Cloneable {
      * @param dir direzione nella quale calcolare il bound
      * @return coordinate del blocchetto
      */
-    public ArrayList<Punto> getLateralBound(Direction dir) {
+    public ArrayList<Punto> getBound(Direction dir) {
         
-        ArrayList<Punto> lateralBound = new ArrayList<>();
-        //lateralBound.add(new Punto(0, 0));
+        ArrayList<Punto> bound = new ArrayList<>();
         
         boolean cond;
         int colIndexToWatch;    // indice di colonna da guardare per capire se il blocchetto fa parte del bordo
@@ -171,17 +174,21 @@ public class Tetramino implements Cloneable {
                     cond = (dir == Direction.DX) ? (j == BBOX_C - 1) : (j == 0);
                     colIndexToWatch = (dir == Direction.DX) ? j + 1 : j - 1;
                     
-                    if(cond || coords[i][colIndexToWatch] == 0) {
-                        lateralBound.add(new Punto(i, j));
+                    if(dir == Direction.DOWN) {
+                        if(i == BBOX_R - 1 || coords[i+1][j] == 0) {
+                            bound.add(new Punto(i, j));
+                        }
                     }
-                    
+                    else if(cond || coords[i][colIndexToWatch] == 0) {
+                        bound.add(new Punto(i, j));
+                    }
                 }
             }
         }
         
-        lateralBound.sort(new PuntoCompCol());
+        bound.sort(new PuntoCompCol());
         
-        return lateralBound;
+        return bound;
     }
     
     @Override
@@ -212,5 +219,30 @@ public class Tetramino implements Cloneable {
         catch(CloneNotSupportedException e) {
             return null;
         }
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 97 * hash + Objects.hashCode(this.type);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Tetramino other = (Tetramino) obj;
+        if (this.type != other.type) {
+            return false;
+        }
+        return true;
     }
 }

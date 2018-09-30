@@ -9,7 +9,7 @@ package nicolasbenatti_tetris;
  * punto in una matrice (riga/colonna).
  * @author Nicolas Benatti
  */
-public class Punto implements Comparable<Punto> {
+public class Punto implements Comparable<Punto>, Cloneable {
     
     /**
      * ascissa del punto
@@ -76,6 +76,14 @@ public class Punto implements Comparable<Punto> {
     } 
 
     @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 83 * hash + this.i;
+        hash = 83 * hash + this.j;
+        return hash;
+    }
+    
+    @Override
     public String toString() {
         return "("+i+", "+j+")";
     }
@@ -86,5 +94,17 @@ public class Punto implements Comparable<Punto> {
             return Integer.compare(this.getI(), t.getI());
         else
             return Integer.compare(this.getJ(), t.getJ());
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        try {
+            
+            Punto cloned = (Punto)super.clone();
+            return cloned;
+        }
+        catch(CloneNotSupportedException e) {
+            return null;
+        }
     }
 }

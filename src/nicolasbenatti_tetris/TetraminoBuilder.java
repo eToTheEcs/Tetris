@@ -5,11 +5,29 @@
  */
 package nicolasbenatti_tetris;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * contiene tutte le maschere per disegnare i tetramini
  * @author Nicolas Benatti
  */
 public class TetraminoBuilder {
+    
+    /**
+     * contiene le altezze dei vari tetramini
+     */
+    public static Map<TetraminoType, Integer> tetraminoHeights = new HashMap<TetraminoType, Integer>(){
+        {
+            put(TetraminoType.I, 1);
+            put(TetraminoType.J, 2);
+            put(TetraminoType.L, 2);
+            put(TetraminoType.O, 2);
+            put(TetraminoType.I, 2);
+            put(TetraminoType.I, 2);
+            put(TetraminoType.I, 2);
+        }
+    };
     
     /**
      * dimensione bounding box dell'ultimo tetramino

@@ -11,7 +11,7 @@ import java.util.ArrayList;
  * griglia di gioco
  * @author Nicolas Benatti
  */
-public class Campo {
+public class Campo implements Cloneable {
     
     /**
      * riga dalla quale tutti i tetramini vengono lanciati.<br>
@@ -47,7 +47,7 @@ public class Campo {
     private Pair<Punto, Tetramino> fallingTetramino;  
     
     /**
-     * tetramino precedente
+     * tetramino precedente.
      */
     private Tetramino prevTetramino;
     
@@ -70,6 +70,12 @@ public class Campo {
      */
     private int score;
     
+    /**
+     * indica lo stato della partita
+     * 0: in corso
+     * 1: terminata
+     */
+    private boolean gameStatus;
     
     /**
      * costruisci una griglia di gioco
@@ -98,7 +104,41 @@ public class Campo {
         // inizializzazioni casuali
         fallingTetramino = new Pair(new Punto(0, 0), new Tetramino(TetraminoType.T));
         nextTetramino = null;
-        prevTetramino = null;
+        prevTetramino = new Tetramino(TetraminoType.T);
+        
+        gameStatus = false;
+    }
+
+    public boolean isGameEnded() {
+        return gameStatus;
+    }
+    
+    /**
+     * controlla se la condizione di fine partita è soddisfatta.<br>
+     * tale controllo viene eseguito prima di lanciare i tetramini.
+     * @return 
+     */
+    private boolean checkGameEnd(int spawnCol) {
+                
+        Tetramino toThrow = fallingTetramino.getSecond();
+        
+        ArrayList<Punto> lb = /*toThrow.getLowerBound()*/toThrow.getBound(Direction.DOWN);
+        
+        int i, minI = grid.length;
+        
+        for(Punto it : lb) {
+            
+            for(i = 0; i < grid.length; ++i) {
+                
+                if(grid[i][spawnCol + it.getJ()] != 0 && i < minI) {
+                    
+                    minI = i;
+                    break;
+                }
+            }
+        }
+        
+        return minI < TetraminoBuilder.tetraminoHeights.get(TetraminoType.O);
     }
     
     /**
@@ -158,6 +198,15 @@ public class Campo {
         return nextTetramino;
     }
     
+    public Tetramino getPrevTetramino() {
+        return prevTetramino;
+    }
+    
+    public void setPrevTetramino(Tetramino t) throws CloneNotSupportedException {
+        
+        prevTetramino = (Tetramino)t.clone();
+    }
+    
     /**
      * genera un tetramino casuale
      * @return tetramino generato
@@ -174,24 +223,21 @@ public class Campo {
      * ma allo stesso tempo genera il tetramino che cadrà successivamente ad esso.
      */
     public void throwTetramino() {
-                
-        Tetramino toThrow = null;
         
-        if(nextTetramino == null)
-            toThrow = generateRandomTetramino();
-        else
-            toThrow = nextTetramino;
-        
-        //System.out.println((int)(Math.random() * TetraminoType.values().length) + 1);
-        //System.out.println(toThrow.getType());
+        Tetramino toThrow = (nextTetramino == null) ? generateRandomTetramino() : nextTetramino;
         
         lastSpawnCol = generateSpawnIndex(toThrow);
         
-        //System.out.println(spawnColIndex);
-        
         // resetta i dati sul nuovo tetramino
         this.fallingTetramino.setFirst(new Punto(INITIAL_SPAWN_ROW, lastSpawnCol));
-        this.fallingTetramino.setSecond(toThrow);
+        this.fallingTetramino.setSecond(toThrow);      
+        
+        if(checkGameEnd(lastSpawnCol)) {
+            System.out.println("PARTITA FINITA");
+            gameStatus = true;
+        }
+        else
+            System.out.println("PARTITA IN CORSO");
         
         // genera il 2° tetramino
         this.nextTetramino = generateRandomTetramino();
@@ -283,17 +329,17 @@ public class Campo {
         
         ArrayList<Punto> bound = null;
         
-        if(dir == Direction.DOWN)
-            bound = fallingTetramino.getSecond().getLowerBound();
+        /*if(dir == Direction.DOWN)
+            bound = fallingTetramino.getSecond().getLateralBound(Direction.DOWN);
         else if(dir == Direction.DX)
             bound = fallingTetramino.getSecond().getLateralBound(Direction.DX);
         else
-            bound = fallingTetramino.getSecond().getLateralBound(Direction.SX);
+            bound = fallingTetramino.getSecond().getLateralBound(Direction.SX);*/
+        
+        bound = fallingTetramino.getSecond().getBound(dir);
         
         int baseI = fallingTetramino.getFirst().getI();
         int baseJ = fallingTetramino.getFirst().getJ();
-        
-        //System.out.println("** " + baseI + ", " + bound.get(0).getI() + " **");
         
         if(dir == Direction.DOWN && baseI + bound.get(0).getI() >= grid.length - 1 ||
            dir == Direction.DX && baseJ + bound.get(0).getJ() >= grid[0].length - 1 ||
@@ -343,17 +389,6 @@ public class Campo {
         
         return grid[i][j];
     }
-
-    /**
-     * rileva la condizione di fine partita
-     * @return true se la partita è finita, false altrimenti
-     */
-    public boolean gameOver() {
-        
-        
-        
-        return false;
-    }
     
     /**
      * dice se è possibile ruotare il tetramino in caduta.
@@ -395,5 +430,21 @@ public class Campo {
         }
         
         return res;
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        try {
+            Campo cloned = (Campo)super.clone();
+            cloned.grid = (byte[][])this.grid.clone();
+            cloned.nextTetramino = (Tetramino)this.nextTetramino.clone();
+            cloned.prevTetramino = (Tetramino)this.prevTetramino.clone();
+            cloned.fallingTetramino = (Pair<Punto, Tetramino>)this.fallingTetramino.clone();
+            
+            return cloned;
+        }
+        catch(CloneNotSupportedException e) {
+            return null;
+        }
     }
 }

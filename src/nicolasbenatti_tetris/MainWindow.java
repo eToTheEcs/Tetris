@@ -11,6 +11,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.IOException;
 import javax.swing.JFrame;
 
 /**
@@ -43,17 +44,17 @@ public class MainWindow extends JFrame implements KeyListener {
     /**
      * punto di ancoraggio della griglia di gioco.
      */
-    private Punto gridAnchor = new Punto(0, 200);    // punto in alto a sx della griglia di gioco
+    private final Punto gridAnchor = new Punto(0, 200);    // punto in alto a sx della griglia di gioco
     
     /**
-     * punto di ancoraggio dell'indicatore "prossimo tetramino". (in pixel)
+     * punto di ancoraggio dell'indicatore "prossimo tetramino".
      */
-    private Punto nextTetraminoAnchor = new Punto(400, 30);
+    private final Punto nextTetraminoAnchor = new Punto(400, 30);
     
     /**
      * punto di ancoraggio dell'indicatore di punteggio
      */
-    private Punto scoreAnchor = new Punto(600, 600);
+    private final Punto scoreAnchor = new Punto(600, 600);
 
     /**
      * dice al metodo paint() quando bisogna aggiornare la scena statica.<br>
@@ -67,7 +68,7 @@ public class MainWindow extends JFrame implements KeyListener {
     private int lastMove;
     
     /**
-     * posizione precedente del tetramino
+     * precedente orientamento del tetramino
      * TODO: pensare di spostarlo nella classe Campo
      */
     private Tetramino prevTetramino;
@@ -93,8 +94,12 @@ public class MainWindow extends JFrame implements KeyListener {
         staticRenderNeeded = true;
         lastMove = Direction.DOWN.getValue();
         
-        // inizializzazione casuale
-        prevTetramino = new Tetramino(TetraminoType.T);
+        try {
+            ImageManager.loadFromDisk();
+        }
+        catch(IOException e) {
+            System.out.println("ERROR: cannot load image resources from disk");
+        }
     }
     
     /**
@@ -106,16 +111,17 @@ public class MainWindow extends JFrame implements KeyListener {
         
         boolean gameStarted = true;
         
-        while(!grid.gameOver()) {
+        while(!grid.isGameEnded()) {
             
             if(!grid.fallingTetraminoIsColliding(Direction.DOWN)) {
                     
                 grid.continueFalling();
 
-                System.out.println("**" + staticRenderNeeded + ", " + gameStarted + "**");
+                System.out.println("** staticRender: " + staticRenderNeeded + ", gameStarted: " + gameStarted + "**");
                 
                 // se nel frame prima ho aggiornato la scena statica, adesso non devo più farlo
                 if(staticRenderNeeded && !gameStarted) {  
+                    System.out.println("azzero");
                     this.repaint();
                     staticRenderNeeded = false;
                     gameStarted = true;
@@ -125,7 +131,7 @@ public class MainWindow extends JFrame implements KeyListener {
 
                 try {
                     // salvo posizione precedente del tetramino
-                    this.prevTetramino = (Tetramino)grid.getFallingTetramino().getSecond().clone();
+                    grid.setPrevTetramino((Tetramino)grid.getFallingTetramino().getSecond().clone());
                 }
                 catch(CloneNotSupportedException e) {
                     System.out.println(e);
@@ -136,6 +142,7 @@ public class MainWindow extends JFrame implements KeyListener {
                 grid.blockFallingTetramino();
                 grid.throwTetramino();
                 staticRenderNeeded = true;
+                gameStarted = false;
             }
             
             try {
@@ -147,12 +154,19 @@ public class MainWindow extends JFrame implements KeyListener {
             
             this.repaint();
         }
+        
+        
     }
     
     @Override
     public void paint(Graphics g) {
-                
-        System.out.println(staticRenderNeeded);
+                      
+        if(grid.isGameEnded()) {
+            
+            g.drawImage(ImageManager.gameOver, 30, 50, this);
+            
+            return;
+        }
         
         if(staticRenderNeeded) {
             
@@ -165,7 +179,7 @@ public class MainWindow extends JFrame implements KeyListener {
                for(int j = 0; j < GRID_COLS; ++j) {
 
                    int cellValue = grid.getCellValue(i, j);
-
+                   
                    if(cellValue == 0) {
                        g.setColor(Color.BLACK);
                    }
@@ -173,12 +187,10 @@ public class MainWindow extends JFrame implements KeyListener {
                        g.setColor(decideTetraminoColor(TetraminoType.values()[cellValue - 1]));
                    }
                    
-                   // passa da indici a coordinate-schermo
                    Punto realCoordinates = indexToScreen(i, j);
 
                    g.fillRect(realCoordinates.getJ(), realCoordinates.getI(), grid.getTileDim(), grid.getTileDim());
-                   
-                   // disegna contorno cella (per visualizzazione griglia
+                   // disegna contorno cella (per visualizzazione griglia)
                    g.setColor(Color.BLACK);
                    g.drawRect(realCoordinates.getJ(), realCoordinates.getI(), grid.getTileDim(), grid.getTileDim());
                }
@@ -206,10 +218,9 @@ public class MainWindow extends JFrame implements KeyListener {
         
         //System.out.println("last move: " + lastMove + "\ncoords: " + tetraminoAnchor + "\nprev coords: " + new Punto(prevI, prevJ));
         
-        //Punto prevTetraminoAnchor = new Punto(prevI, prevJ);
         Punto prevTetraminoScreenCoords = indexToScreen(prevI, prevJ);
                 
-        removeTetramino(g, prevTetraminoScreenCoords, this.prevTetramino);
+        removeTetramino(g, prevTetraminoScreenCoords, grid.getPrevTetramino());
         
         // disegnalo nella nuova posizione
         g.setColor(decideTetraminoColor(tetramino.getType()));
@@ -217,9 +228,7 @@ public class MainWindow extends JFrame implements KeyListener {
         
         /* === disegna il campo "prossimo tetramino lanciato" === */
         
-        g.setColor(Color.BLACK);
-        g.setFont(new Font("Arial", Font.BOLD, 16));
-        g.drawString("NEXT", nextTetraminoAnchor.getJ(), nextTetraminoAnchor.getI() - 20);
+        g.drawImage(ImageManager.next, nextTetraminoAnchor.getJ(), nextTetraminoAnchor.getI()-30, this);
         g.setColor(getBackground());
         
         // cancella precedente
@@ -344,7 +353,7 @@ public class MainWindow extends JFrame implements KeyListener {
                     
                     try {
                         // salvo posizione precedente del tetramino
-                        this.prevTetramino = (Tetramino)grid.getFallingTetramino().getSecond().clone();
+                        grid.setPrevTetramino((Tetramino)grid.getFallingTetramino().getSecond().clone());
                     }
                     catch(CloneNotSupportedException e) {
                         System.out.println(e);
@@ -362,7 +371,7 @@ public class MainWindow extends JFrame implements KeyListener {
                     
                     try {
                         // salvo posizione precedente del tetramino
-                        this.prevTetramino = (Tetramino)grid.getFallingTetramino().getSecond().clone();
+                        grid.setPrevTetramino((Tetramino)grid.getFallingTetramino().getSecond().clone());
                     }
                     catch(CloneNotSupportedException e) {
                         System.out.println(e);
@@ -382,7 +391,7 @@ public class MainWindow extends JFrame implements KeyListener {
                     
                     try {
                         // salvo posizione precedente del tetramino
-                        this.prevTetramino = (Tetramino)grid.getFallingTetramino().getSecond().clone();
+                        grid.setPrevTetramino((Tetramino)grid.getFallingTetramino().getSecond().clone());
                     }
                     catch(CloneNotSupportedException e) {
                         System.out.println(e);
@@ -409,7 +418,7 @@ public class MainWindow extends JFrame implements KeyListener {
                     
                     try {
                         // salvo posizione precedente del tetramino
-                        this.prevTetramino = (Tetramino)grid.getFallingTetramino().getSecond().clone();
+                        grid.setPrevTetramino((Tetramino)grid.getFallingTetramino().getSecond().clone());
                     }
                     catch(CloneNotSupportedException e) {
                         System.out.println(e);
@@ -434,7 +443,7 @@ public class MainWindow extends JFrame implements KeyListener {
                     
                     try {
                         // salvo posizione precedente del tetramino
-                        this.prevTetramino = (Tetramino)grid.getFallingTetramino().getSecond().clone();
+                        grid.setPrevTetramino((Tetramino)grid.getFallingTetramino().getSecond().clone());
                     }
                     catch(CloneNotSupportedException e) {
                         System.out.println(e);
@@ -445,6 +454,7 @@ public class MainWindow extends JFrame implements KeyListener {
                     grid.blockFallingTetramino();
                     grid.throwTetramino();
                     staticRenderNeeded = true;
+                    
                 }
                 
                 this.repaint();
