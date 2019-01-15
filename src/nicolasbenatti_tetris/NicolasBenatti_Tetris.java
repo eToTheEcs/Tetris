@@ -22,8 +22,7 @@ public class NicolasBenatti_Tetris {
         MainWindow mw = new MainWindow();
         
         mw.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        mw.setLocationRelativeTo(null);
-        mw.pack();
+        //mw.setLocationRelativeTo(null);
         mw.setVisible(true);
         
         // fai partire il gioco

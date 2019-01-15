@@ -7,71 +7,95 @@ package nicolasbenatti_tetris;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
 import javax.swing.JFrame;
 
 /**
- * finestra del gioco
+ * finestra principale del gioco
  * @author Nicolas Benatti
  */
 public class MainWindow extends JFrame implements KeyListener {
     
     /**
+     * colore di sfondo della schermata
+     */
+    private final Color backGroundColor = new Color(127, 127, 127);
+    
+    /* == PARAMETRI DEL GIOCO == */
+    
+    /**
      * intervallo tra i movimenti di caduta del tetramino (in millisecondi).
      */
-    private static final int DELAY_MSEC = 800;
+    private static final int DELAY_MSEC = 680;
     
     /**
      * no. di righe della griglia.
      */
-    private final int GRID_ROWS = 20;
+    public static final int GRID_ROWS = 20;
     /**
      * no. di colonne della griglia.
      */
-    private final int GRID_COLS = 10;
+    public static final int GRID_COLS = 10;
+    
+    /**
+     * larghezza della griglia di gioco (in pixel).
+     */
+    public static final int w = 350;
+    
+    /**
+     * lato di un "blocco", unità minima del gioco (in pixel).
+     */
+    public static final int tileDim = w / GRID_COLS;
+    
+    /**
+     * altezza della griglia di gioco (in pixel).
+     */
+    public static final int h = tileDim * GRID_ROWS;
+    
+    /* ==================================================*/
     
     /**
      * griglia di gioco.
      */
     private Campo grid;
     
-    /* === punti di ancoraggio dei componenti dell'interfaccia === */
-    
-    /**
-     * punto di ancoraggio della griglia di gioco.
-     */
-    private final Punto gridAnchor = new Punto(0, 200);    // punto in alto a sx della griglia di gioco
-    
-    /**
-     * punto di ancoraggio dell'indicatore "prossimo tetramino".
-     */
-    private final Punto nextTetraminoAnchor = new Punto(400, 30);
-    
-    /**
-     * punto di ancoraggio dell'indicatore di punteggio
-     */
-    private final Punto scoreAnchor = new Punto(600, 600);
-
     /**
      * dice al metodo paint() quando bisogna aggiornare la scena statica.<br>
      * la scena statica va aggiornata quando si verifica la fine della caduta di un tetramino
      */
-    private boolean staticRenderNeeded;
+    private static boolean staticRenderNeeded;
+    
+    /**
+     * indica se la caduta di un tetramino è appena iniziata.
+     */
+    private boolean fallStarted;
     
     /**
      * contiene la direzione dell'ultima mossa effettuata dal giocatore.
      */
-    private int lastMove;
+    private static int lastMove;
     
     /**
-     * precedente orientamento del tetramino
+     * precedente orientamento del tetramino.
      * TODO: pensare di spostarlo nella classe Campo
      */
     private Tetramino prevTetramino;
+    
+    /* == PANNELLI DELL'INTERFACCIA == */
+    
+    private NextTetraminoPanel ntp;
+    
+    private GridPanel gp;
+    
+    private GameDataPanel gdp;
+    
+    /* =============================== */
     
     /**
      * costruisce la finestra di gioco
@@ -79,18 +103,18 @@ public class MainWindow extends JFrame implements KeyListener {
     public MainWindow() {
         
         setTitle("TETRIS");
-        setPreferredSize(new Dimension(800, 780));
+        //setPreferredSize(new Dimension(580, 730));
         setResizable(false);
+        setBackground(backGroundColor);
         
-        grid = new Campo(GRID_ROWS, GRID_COLS, 350);
+        setLayout(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
         
-        addKeyListener(this);
-        
-        // lancia il primo tetramino
-        grid.throwTetramino();
-        
-        System.out.println(grid.getFallingTetramino().getSecond());
-                
+        grid = new Campo(GRID_ROWS, GRID_COLS);
+        ntp = new NextTetraminoPanel();
+        gp = new GridPanel(grid);
+        gdp = new GameDataPanel(grid.getGm());
+                        
         staticRenderNeeded = true;
         lastMove = Direction.DOWN.getValue();
         
@@ -100,16 +124,58 @@ public class MainWindow extends JFrame implements KeyListener {
         catch(IOException e) {
             System.out.println("ERROR: cannot load image resources from disk");
         }
+        
+        addKeyListener(this);
+        
+        // aggiungi i pannelli
+        c.fill = GridBagConstraints.HORIZONTAL;
+        //c.anchor = GridBagConstraints.FIRST_LINE_START;
+        c.gridx = 0;
+        c.gridy = 0;
+        c.gridwidth = 1; 
+        c.gridheight = 1;
+        c.insets = new Insets(0, 0, 0, 0);
+        this.add(ntp, c);
+
+        c.gridx = 0;
+        c.gridy = 1;
+        c.gridwidth = c.gridheight = 1;
+        c.insets = new Insets(0, 0, 0, 0);
+        this.add(gdp, c);
+        
+        c.gridheight = 3;
+        c.gridwidth = 1;
+        c.gridx = 1;
+        c.gridy = 0;
+        c.insets = new Insets(0, 0, 0, 0);
+        this.add(gp, c);
+        
+        this.pack();
+        /*grid.throwTetramino();
+        ntp.setTetraminoToDraw(grid.getNextTetramino());*/
+    }
+
+    public static int getLastMove() {
+        return lastMove;
+    }
+
+    public static boolean isStaticRenderNeeded() {
+        return staticRenderNeeded;
     }
     
     /**
-     * esegue il ciclo principale del gioco.
+     * ciclo principale del gioco.
      */
     public void gameLoop() {
         
         System.out.println("inizia game loop");
+       
+        fallStarted = true;
         
-        boolean gameStarted = true;
+        grid.throwTetramino();
+        ntp.setTetraminoToDraw(grid.getNextTetramino());
+        
+        int gameCycles = 0;   // contatore di tetramini caduti
         
         while(!grid.isGameEnded()) {
             
@@ -117,14 +183,14 @@ public class MainWindow extends JFrame implements KeyListener {
                     
                 grid.continueFalling();
 
-                System.out.println("** staticRender: " + staticRenderNeeded + ", gameStarted: " + gameStarted + "**");
+                System.out.println("** staticRender: " + staticRenderNeeded + ", fallStarted: " + fallStarted + "**");
                 
                 // se nel frame prima ho aggiornato la scena statica, adesso non devo più farlo
-                if(staticRenderNeeded && !gameStarted) {  
-                    System.out.println("azzero");
+                if(gameCycles > 0 && staticRenderNeeded && fallStarted) {  
+                    System.out.println("azzero " + staticRenderNeeded);
                     this.repaint();
+                    fallStarted = false;
                     staticRenderNeeded = false;
-                    gameStarted = true;
                 }
 
                 lastMove = Direction.DOWN.getValue();
@@ -138,12 +204,27 @@ public class MainWindow extends JFrame implements KeyListener {
                 }
             }
             else {    // il tetramino diventa parte della scena statica e ne viene generato un'altro
-
+                
+                //System.out.println("gioco");
+                gameCycles++;
                 grid.blockFallingTetramino();
                 grid.throwTetramino();
+                
+                int numOfLinesCleared;
+                    
+                if((numOfLinesCleared = grid.clearLines()) > 0) {
+                    // aggiorna punteggio
+                    for(int i = 0; i < numOfLinesCleared; ++i)
+                        grid.getGm().notifyLineClear();
+                    grid.getGm().scoreUp();
+                }
+                
+                ntp.setTetraminoToDraw(grid.getNextTetramino());
                 staticRenderNeeded = true;
-                gameStarted = false;
+                fallStarted = true;
             }
+            
+            this.repaint();
             
             try {
                 Thread.sleep(DELAY_MSEC);
@@ -151,118 +232,39 @@ public class MainWindow extends JFrame implements KeyListener {
             catch(InterruptedException e) {
                 System.out.println("pausa interrotta");
             }
-            
-            this.repaint();
         }
-        
-        
     }
     
     @Override
     public void paint(Graphics g) {
-                      
+                    
         if(grid.isGameEnded()) {
             
-            g.drawImage(ImageManager.gameOver, 30, 50, this);
+            g.drawImage(ImageManager.gameOver, 25, 450, this);
             
             return;
         }
         
-        if(staticRenderNeeded) {
-            
-            /* === disegna la griglia di gioco === */
-            g.fillRect(gridAnchor.getJ(), gridAnchor.getI(), grid.getW(), grid.getH());
-            
-            /* === disegna la scena statica === */
-            
-            for(int i = 0; i < GRID_ROWS; ++i) {
-               for(int j = 0; j < GRID_COLS; ++j) {
-
-                   int cellValue = grid.getCellValue(i, j);
-                   
-                   if(cellValue == 0) {
-                       g.setColor(Color.BLACK);
-                   }
-                   else {
-                       g.setColor(decideTetraminoColor(TetraminoType.values()[cellValue - 1]));
-                   }
-                   
-                   Punto realCoordinates = indexToScreen(i, j);
-
-                   g.fillRect(realCoordinates.getJ(), realCoordinates.getI(), grid.getTileDim(), grid.getTileDim());
-                   // disegna contorno cella (per visualizzazione griglia)
-                   g.setColor(Color.BLACK);
-                   g.drawRect(realCoordinates.getJ(), realCoordinates.getI(), grid.getTileDim(), grid.getTileDim());
-               }
-            }
-        }
+        gp.repaint();
         
-        /* === disegna il tetramino in movimento === */
+        // disegna il campo "prossimo tetramino lanciato"
         
-        Punto tetraminoAnchor = grid.getFallingTetramino().getFirst();
-        Tetramino tetramino = grid.getFallingTetramino().getSecond();
+        ntp.repaint();
         
-        // punti di ancoraggio precedenti
-        int prevI = tetraminoAnchor.getI(), prevJ = tetraminoAnchor.getJ();
-       
-        if(lastMove == Direction.DOWN.getValue()) {
-            prevI--;
-        }
-        else if(lastMove == Direction.DX.getValue()) {
-            prevJ--;
-        }
-        else if(lastMove == Direction.SX.getValue()) {
-            prevJ++;
-        }
-        else {}
+        // disegna il pannello dei punteggi
         
-        //System.out.println("last move: " + lastMove + "\ncoords: " + tetraminoAnchor + "\nprev coords: " + new Punto(prevI, prevJ));
-        
-        Punto prevTetraminoScreenCoords = indexToScreen(prevI, prevJ);
-                
-        removeTetramino(g, prevTetraminoScreenCoords, grid.getPrevTetramino());
-        
-        // disegnalo nella nuova posizione
-        g.setColor(decideTetraminoColor(tetramino.getType()));
-        drawTetramino(g, indexToScreen(tetraminoAnchor.getI(), tetraminoAnchor.getJ()), tetramino);
-        
-        /* === disegna il campo "prossimo tetramino lanciato" === */
-        
-        g.drawImage(ImageManager.next, nextTetraminoAnchor.getJ(), nextTetraminoAnchor.getI()-30, this);
-        g.setColor(getBackground());
-        
-        // cancella precedente
-        g.fillRect(nextTetraminoAnchor.getJ(), nextTetraminoAnchor.getI(), grid.getTileDim() * 4, grid.getTileDim() * 4);
-        g.drawRect(nextTetraminoAnchor.getJ(), nextTetraminoAnchor.getI(), grid.getTileDim() * 4, grid.getTileDim() * 4);
-        
-        // scrivi nuovo
-        g.setColor(decideTetraminoColor(grid.getNextTetramino().getType()));
-        drawTetramino(g, nextTetraminoAnchor, grid.getNextTetramino());
+        gdp.repaint();
     }
     
-    /**
-     * converte una coppia di indici della griglia di gioco<br>
-     * in coordinate dello schermo, basandosi sulla dimensione di un blocchetto
-     * e della griglia
-     * @param i indice di riga
-     * @param j indice di colonna
-     * @return coordinate sullo schermo
-     */
-    private Punto indexToScreen(int i, int j) {
-        
-        return new Punto(gridAnchor.getI() + grid.getTileDim()*i + 27, gridAnchor.getJ() + grid.getTileDim()*j);
-    }
     
     /**
-     * disegna un tetramino sullo schermo
+     * disegna un tetramino sullo schermo (DEPRECATED)
      * @param g contesto grafico
-     * @param anchor punto in alto-sx della bounding boc
+     * @param anchor punto in alto-sx della bounding box
      * @param tet tetramino da disegnare
      */
-    public void drawTetramino(Graphics g, Punto anchor, Tetramino tet) {
-        
-        int tileDim = grid.getTileDim();
-        
+    public static void drawTetramino(Graphics g, Punto anchor, Tetramino tet) {
+                
         for(int i = 0; i < tet.BBOX_R; ++i) {
             for(int j = 0; j < tet.BBOX_C; ++j) { 
                 if(tet.getBBval(i, j) != 0) {
@@ -277,31 +279,11 @@ public class MainWindow extends JFrame implements KeyListener {
     }
     
     /**
-     * cancella il tetramino dallo schermo.
-     * @param g contesto grafico
-     * @param anchor punto in alto-sx della bounding boc
-     * @param tet tetramino da disegnare
-     */
-    public void removeTetramino(Graphics g, Punto anchor, Tetramino tet) {
-                
-        int tileDim = grid.getTileDim();
-        
-        for(int i = 0; i < tet.BBOX_R; ++i) {
-            for(int j = 0; j < tet.BBOX_C; ++j) { 
-                if(tet.getBBval(i, j) != 0) {
-                    g.setColor(Color.BLACK);
-                    g.fillRect(anchor.getJ()+(j*tileDim), anchor.getI()+(i*tileDim), tileDim, tileDim);
-                }
-            }
-        }
-    }
-    
-    /**
      * ritorna il colore del tetramino da renderizzare.
      * @param tt tipo del tetramino da renderizzare.
      * @return colore appropriato.
      */
-    private Color decideTetraminoColor(TetraminoType tt) {
+    public static Color decideTetraminoColor(TetraminoType tt) {
         
         Color res = null;
         
@@ -346,8 +328,8 @@ public class MainWindow extends JFrame implements KeyListener {
                     
                     grid.slideFallingTetramino(Direction.SX);
                     
-                    if(staticRenderNeeded)  
-                        staticRenderNeeded = false;
+                    /*if(staticRenderNeeded)  
+                        staticRenderNeeded = false;*/
                     
                     lastMove = Direction.SX.getValue();
                     
@@ -411,8 +393,8 @@ public class MainWindow extends JFrame implements KeyListener {
                     
                     grid.slideFallingTetramino(Direction.DX);
                     
-                    if(staticRenderNeeded)  
-                        staticRenderNeeded = false;
+                    /*if(staticRenderNeeded)  
+                        staticRenderNeeded = false;*/
                     
                     lastMove = Direction.DX.getValue();
                     
@@ -436,8 +418,8 @@ public class MainWindow extends JFrame implements KeyListener {
                     grid.continueFalling();
                     
                     // se nel frame prima ho aggiornato la scena statica, adesso smetto
-                    if(staticRenderNeeded)  
-                        staticRenderNeeded = false;
+                    /*if(staticRenderNeeded)  
+                        staticRenderNeeded = false;*/
                     
                     lastMove = Direction.DOWN.getValue();
                     
@@ -450,11 +432,23 @@ public class MainWindow extends JFrame implements KeyListener {
                     }
                 }
                 else {    // il tetramino diventa parte della scena statica e ne viene generato un'altro
-                    
+                    //System.out.println("freccia");
                     grid.blockFallingTetramino();
                     grid.throwTetramino();
-                    staticRenderNeeded = true;
                     
+                    int numOfLinesCleared;
+                    
+                    if((numOfLinesCleared = grid.clearLines()) > 0) {
+                        // aggiorna punteggio
+                        for(int i = 0; i < numOfLinesCleared; ++i)
+                            grid.getGm().notifyLineClear();
+                        grid.getGm().scoreUp();
+                    }
+                    
+                    ntp.setTetraminoToDraw(grid.getNextTetramino());
+                    
+                    staticRenderNeeded = true;
+                    fallStarted = true;
                 }
                 
                 this.repaint();

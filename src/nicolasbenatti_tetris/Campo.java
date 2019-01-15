@@ -8,10 +8,10 @@ package nicolasbenatti_tetris;
 import java.util.ArrayList;
 
 /**
- * griglia di gioco
+ * gestisce griglia di gioco e la partita.
  * @author Nicolas Benatti
  */
-public class Campo implements Cloneable {
+public class Campo {
     
     /**
      * riga dalla quale tutti i tetramini vengono lanciati.<br>
@@ -23,16 +23,6 @@ public class Campo implements Cloneable {
      * contiene l'indice di colonna dal quale l'ultimo tetramino è stato lanciato
      */
     private int lastSpawnCol;
-    
-    /**
-     * dimensioni della griglia di gioco (in pixel).
-     */
-    private int h, w;
-    
-    /**
-     * lato di un blocchetto (unità base, in pixel).
-     */
-    private int tileDim;    
     
     /**
      * numero di righe e colonne della griglia.
@@ -66,11 +56,6 @@ public class Campo implements Cloneable {
     private byte[][] grid;
     
     /**
-     * punteggio della partita.
-     */
-    private int score;
-    
-    /**
      * indica lo stato della partita
      * 0: in corso
      * 1: terminata
@@ -78,20 +63,19 @@ public class Campo implements Cloneable {
     private boolean gameStatus;
     
     /**
+     * gestore del punteggio della partita
+     */
+    private GameManager gm;
+    
+    /**
      * costruisci una griglia di gioco
      * @param rows numero di righe
      * @param cols numero di colonne
-     * @param w larghezza (in pixel)
      */
-    public Campo(int rows, int cols, int w) {
+    public Campo(int rows, int cols) {
                 
-        this.w = w;
         this.cols = cols;
         this.rows = rows;
-        
-        // deduci le altre dimensioni
-        tileDim = w / cols;
-        h = tileDim * rows;
         
         grid = new byte[this.rows][this.cols];
         
@@ -107,6 +91,12 @@ public class Campo implements Cloneable {
         prevTetramino = new Tetramino(TetraminoType.T);
         
         gameStatus = false;
+        
+        gm = new GameManager();
+    }
+
+    public GameManager getGm() {
+        return gm;
     }
 
     public boolean isGameEnded() {
@@ -141,30 +131,6 @@ public class Campo implements Cloneable {
         return minI < TetraminoBuilder.tetraminoHeights.get(TetraminoType.O);
     }
     
-    /**
-     * ritorna l'altezza della griglia.
-     * @return altezza (in pixel)
-     */
-    public int getH() {
-        return h;
-    }
-
-    /**
-     * ritorna la larghezza della griglia.
-     * @return larghezza (in pixel)
-     */
-    public int getW() {
-        return w;
-    }
-
-    /**
-     * ritorna la dimensione di un blocchetto
-     * @return dimensione blocchetto
-     */
-    public int getTileDim() {
-        return tileDim;
-    }
-
     /**
      * ritorna il numero di righe della griglia
      * @return numero righe griglia
@@ -205,6 +171,53 @@ public class Campo implements Cloneable {
     public void setPrevTetramino(Tetramino t) throws CloneNotSupportedException {
         
         prevTetramino = (Tetramino)t.clone();
+    }
+    
+    /**
+     * controlla se il giocatore ha riempito delle linee
+     * @return indici di riga delle linee complete.
+     */
+    private ArrayList<Integer> checkForLines() {
+        
+        ArrayList<Integer> completedLines = new ArrayList<>();
+        
+        int filledCells = 0;    // no. di celle occupate nella riga
+        
+        for(int i = 0; i < grid.length; ++i) {
+            filledCells = 0;
+            for(int j = 0; j < grid[i].length; ++j) {
+                
+                if(grid[i][j] != 0)
+                    filledCells++;
+            }
+            
+            if(filledCells == grid[i].length)
+                completedLines.add(i);
+        }
+        
+        return completedLines;
+    }
+    
+    /**
+     * toglie, se presenti, le linee complete dalla scena di gioco.
+     * 
+     * @return no. di linee cancellate
+     */
+    public int clearLines() {
+        
+        ArrayList<Integer> lines = checkForLines();
+        
+        for(int it : lines) {
+            
+            for(int j = 0; j < grid[it].length; ++j) {
+                for(int i = it; grid[i][j] != 0; --i) {
+                    
+                    grid[i][j] = grid[i-1][j];
+                }
+            }
+        }
+        
+        return lines.size();
     }
     
     /**
@@ -414,37 +427,5 @@ public class Campo implements Cloneable {
         }
         
         return true;
-    }
-    
-    @Override
-    public String toString() {
-        
-        String res = "";
-        
-        for(int i = 0; i < grid.length; ++i) {
-            for(int j = 0; j < grid[0].length; ++j) {
-                
-                res += grid[i][j] + " ";
-            }
-            res += "\n";
-        }
-        
-        return res;
-    }
-
-    @Override
-    protected Object clone() throws CloneNotSupportedException {
-        try {
-            Campo cloned = (Campo)super.clone();
-            cloned.grid = (byte[][])this.grid.clone();
-            cloned.nextTetramino = (Tetramino)this.nextTetramino.clone();
-            cloned.prevTetramino = (Tetramino)this.prevTetramino.clone();
-            cloned.fallingTetramino = (Pair<Punto, Tetramino>)this.fallingTetramino.clone();
-            
-            return cloned;
-        }
-        catch(CloneNotSupportedException e) {
-            return null;
-        }
     }
 }
