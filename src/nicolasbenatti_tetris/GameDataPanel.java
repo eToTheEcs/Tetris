@@ -25,7 +25,7 @@ public class GameDataPanel extends JPanel {
         
         backgroundColor = new Color(255, 0, 0);
         setPreferredSize(new Dimension(150, 150));
-        setOpaque(true);
+        setOpaque(false);
         setBackground(backgroundColor);
         
         this.gm = gm;

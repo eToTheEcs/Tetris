@@ -8,18 +8,16 @@ package nicolasbenatti_tetris;
 import java.util.Comparator;
 
 /**
- * criterio di ordinamento per indice riga decrescente <br>
- * e, a parità di riga, per colonna decrescente.
+ * criterio di ordinamento per indice colonna decrescente
  * @author Nicolas Benatti
  */
-public class PuntoCompRow implements Comparator<Punto> {
+public class PuntoCompColRev implements Comparator<Punto> {
 
     @Override
     public int compare(Punto t, Punto t1) {
-        
-        if(t.getI() == t1.getI())
-            return Integer.compare(t1.getJ(), t.getJ());
+        if(t.getJ() == t1.getJ())
+            return Integer.compare(t.getI(), t1.getI());
         else
-            return Integer.compare(t1.getI(), t.getI());
+            return Integer.compare(t.getJ(), t1.getJ());
     }
 }

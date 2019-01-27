@@ -61,6 +61,9 @@ public class GameManager {
      */
     private void levelUp() {
         level++;
+        
+        if(level > 0)
+            linesClearedInLevel = 1;    // avoid having a value of 0 when clearing the last line of the level
     }
     
     public void scoreUp() {

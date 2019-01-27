@@ -151,8 +151,6 @@ public class MainWindow extends JFrame implements KeyListener {
         this.add(gp, c);
         
         this.pack();
-        /*grid.throwTetramino();
-        ntp.setTetraminoToDraw(grid.getNextTetramino());*/
     }
 
     public static int getLastMove() {
@@ -183,11 +181,11 @@ public class MainWindow extends JFrame implements KeyListener {
                     
                 grid.continueFalling();
 
-                System.out.println("** staticRender: " + staticRenderNeeded + ", fallStarted: " + fallStarted + "**");
+                //System.out.println("** staticRender: " + staticRenderNeeded + ", fallStarted: " + fallStarted + "**");
                 
                 // se nel frame prima ho aggiornato la scena statica, adesso non devo più farlo
                 if(gameCycles > 0 && staticRenderNeeded && fallStarted) {  
-                    System.out.println("azzero " + staticRenderNeeded);
+                    //System.out.println("azzero " + staticRenderNeeded);
                     this.repaint();
                     fallStarted = false;
                     staticRenderNeeded = false;
@@ -210,9 +208,9 @@ public class MainWindow extends JFrame implements KeyListener {
                 grid.blockFallingTetramino();
                 grid.throwTetramino();
                 
-                int numOfLinesCleared;
+                int numOfLinesCleared = grid.clearLines();
                     
-                if((numOfLinesCleared = grid.clearLines()) > 0) {
+                if(numOfLinesCleared > 0) {
                     // aggiorna punteggio
                     for(int i = 0; i < numOfLinesCleared; ++i)
                         grid.getGm().notifyLineClear();
@@ -328,9 +326,6 @@ public class MainWindow extends JFrame implements KeyListener {
                     
                     grid.slideFallingTetramino(Direction.SX);
                     
-                    /*if(staticRenderNeeded)  
-                        staticRenderNeeded = false;*/
-                    
                     lastMove = Direction.SX.getValue();
                     
                     try {
@@ -393,9 +388,6 @@ public class MainWindow extends JFrame implements KeyListener {
                     
                     grid.slideFallingTetramino(Direction.DX);
                     
-                    /*if(staticRenderNeeded)  
-                        staticRenderNeeded = false;*/
-                    
                     lastMove = Direction.DX.getValue();
                     
                     try {
@@ -417,10 +409,6 @@ public class MainWindow extends JFrame implements KeyListener {
                     
                     grid.continueFalling();
                     
-                    // se nel frame prima ho aggiornato la scena statica, adesso smetto
-                    /*if(staticRenderNeeded)  
-                        staticRenderNeeded = false;*/
-                    
                     lastMove = Direction.DOWN.getValue();
                     
                     try {
@@ -432,7 +420,7 @@ public class MainWindow extends JFrame implements KeyListener {
                     }
                 }
                 else {    // il tetramino diventa parte della scena statica e ne viene generato un'altro
-                    //System.out.println("freccia");
+
                     grid.blockFallingTetramino();
                     grid.throwTetramino();
                     

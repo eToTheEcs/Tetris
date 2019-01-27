@@ -22,22 +22,22 @@ public class NicolasBenatti_Tetris {
         MainWindow mw = new MainWindow();
         
         mw.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        //mw.setLocationRelativeTo(null);
+        mw.setLocationRelativeTo(null);
         mw.setVisible(true);
         
         // fai partire il gioco
         mw.gameLoop();
         
-        /*Tetramino t = new Tetramino(TetraminoType.S);
-        
-        for(int i = 0; i < 2; ++i) {
-            t.rotateClockwise();
-        }
-        
-        System.out.println(t);
-        
-        ArrayList<Punto> lowerBound = t.getLateralBound(Direction.SX);
-        
-        System.out.println(lowerBound);*/
+//        Tetramino t = new Tetramino(TetraminoType.L);
+//        
+//        for(int i = 0; i < 0; ++i) {
+//            t.rotateClockwise();
+//        }
+//        
+//        System.out.println(t);
+//        
+//        ArrayList<Punto> bound = t.getBound(Direction.DOWN);
+//        
+//        System.out.println(bound);
     }    
 }

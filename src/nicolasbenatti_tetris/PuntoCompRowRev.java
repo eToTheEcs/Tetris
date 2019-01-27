@@ -12,14 +12,14 @@ import java.util.Comparator;
  * e, a parità di riga, per colonna decrescente.
  * @author Nicolas Benatti
  */
-public class PuntoCompRow implements Comparator<Punto> {
+public class PuntoCompRowRev implements Comparator<Punto> {
 
     @Override
     public int compare(Punto t, Punto t1) {
         
         if(t.getI() == t1.getI())
-            return Integer.compare(t1.getJ(), t.getJ());
+            return Integer.compare(t.getJ(), t1.getJ());
         else
-            return Integer.compare(t1.getI(), t.getI());
+            return Integer.compare(t.getI(), t1.getI());
     }
 }

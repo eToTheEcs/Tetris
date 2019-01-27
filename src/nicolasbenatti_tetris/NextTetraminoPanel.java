@@ -33,7 +33,7 @@ public class NextTetraminoPanel extends JPanel {
     
     public NextTetraminoPanel() {
         
-        setOpaque(true);
+        setOpaque(false);
         setPreferredSize(new Dimension(150, 150));
         
         tet = null;

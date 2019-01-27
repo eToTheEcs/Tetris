@@ -51,7 +51,7 @@ public class GridPanel extends JPanel {
     public void paint(Graphics g) {
         
         
-        System.out.println("PAINT " + MainWindow.isStaticRenderNeeded());
+        //System.out.println("PAINT " + MainWindow.isStaticRenderNeeded());
         
         if(MainWindow.isStaticRenderNeeded()) {
                         
@@ -101,7 +101,6 @@ public class GridPanel extends JPanel {
         //System.out.println("last move: " + lastMove + "\ncoords: " + tetraminoAnchor + "\nprev coords: " + new Punto(prevI, prevJ));
         
         Punto prevTetraminoScreenCoords = indexToScreen(prevI, prevJ);
-                
         removeTetramino(g, prevTetraminoScreenCoords, gameField.getPrevTetramino());
         
         // disegnalo nella nuova posizione

@@ -161,16 +161,6 @@ public class Tetramino implements Cloneable {
                 
                 if(coords[i][j] != 0) {
                     
-                    /*cond = (dir == Direction.DX) ?  (j > lateralBound.get(0).getJ()) : (j < lateralBound.get(0).getJ());
-                    
-                    if(cond) {
-                        lateralBound.clear();
-                        lateralBound.add(new Punto(i, j));
-                    }
-                    else if(j == lateralBound.get(0).getJ()) {
-                        lateralBound.add(new Punto(i, j));
-                    }*/
-                    
                     cond = (dir == Direction.DX) ? (j == BBOX_C - 1) : (j == 0);
                     colIndexToWatch = (dir == Direction.DX) ? j + 1 : j - 1;
                     
@@ -186,7 +176,10 @@ public class Tetramino implements Cloneable {
             }
         }
         
-        bound.sort(new PuntoCompCol());
+        if(dir == Direction.DX)
+            bound.sort(new PuntoCompCol());
+        else 
+            bound.sort(new PuntoCompColRev());
         
         return bound;
     }

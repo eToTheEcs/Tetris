@@ -354,10 +354,14 @@ public class Campo {
         int baseI = fallingTetramino.getFirst().getI();
         int baseJ = fallingTetramino.getFirst().getJ();
         
-        if(dir == Direction.DOWN && baseI + bound.get(0).getI() >= grid.length - 1 ||
-           dir == Direction.DX && baseJ + bound.get(0).getJ() >= grid[0].length - 1 ||
-           dir == Direction.SX && baseJ + bound.get(0).getJ() <= 0)
+        if((dir == Direction.DOWN && baseI + bound.get(0).getI() >= grid.length - 1) ||
+           (dir == Direction.DX && baseJ + bound.get(0).getJ() >= grid[0].length - 1) ||
+           (dir == Direction.SX && baseJ + bound.get(0).getJ() <= 0)) {
+            
+            System.out.println("raggiunta fine griglia");
+            
             return true;
+        }
                 
         for(Punto boundTile : bound) {
             
@@ -377,8 +381,10 @@ public class Campo {
                 jCoord = baseJ + boundTile.getJ() - 1;
             }
             
+            System.out.println(iCoord+", "+jCoord);
+            
             // ho rilevato collisione
-            if(grid[iCoord][jCoord] != 0) {
+            if(iCoord > grid.length-1 || jCoord > grid[0].length-1 || grid[iCoord][jCoord] != 0) {
                 return true;
             }
         }
